@@ -42,7 +42,7 @@ def setBulbPower(bulbs, power):
 #Check if all bulbs are powered on or off   
 def powerState(bulbs):
     power = False #Off by default.
-    for bulb in bulbs:
+    for bulb in lazylights.get_state(bulbs):
 		power |= bulb.power>0 #once True, always True!
     return power
 
@@ -59,43 +59,43 @@ def createBulb(ip, macString, port = 56700):
 	return lazylights.Bulb(b'LIFXV2', binascii.unhexlify(macString.replace(':', '')), (ip,port))
 
 
-def setBulbColor(bulb, r, g, b, kelvin, fade): 
+def setBulbColor(bulb, r, g, b, kelvin, fade):
+	'''Sets bulb color based on RGB color instead of HSV values'''
 	r = r / float(255)
 	g = g / float(255)
 	b = b / float(255)
 	(hue, saturation, brightness) = colorsys.rgb_to_hsv(r, g, b)
-	hue= hue * float(360)
+	hue = hue * float(360)
 	lazylights.set_state(bulbs,hue, saturation, brightness, kelvin, fade, raw=False)
 	
-"""
-    Sets the state of `bulbs`.
-    If `raw` is True, hue, saturation, and brightness should be integers in the
-    range of 0x0000 to 0xffff. Otherwise, hue should be a float from 0.0 to
-    360.0 (where 360.0/0.0 is red), and saturation and brightness are floats
-    from 0.0 to 1.0 (0 being least saturated and least bright)..
-    `kelvin` is an integer from 2000 to 8000, where 2000 is the warmest and
-    8000 is the coolest. If this is non-zero, the white spectrum is used
-    instead of the color spectrum (hue and saturation are be ignored).
-    `fade` is an integer number of milliseonds over which to transition the
-    state change, carried out by the bulbs.
-"""	
+
 	
 if __name__ == "__main__":  
-    #Create our own Bulbs
-	myBulb1 = createBulb('10.168.1.21', 'D0:73:D5:02:64:11')
-    #append to bulbs list
-	bulbs = [myBulb1]
-
+	#Bulb List 
+	#name = createBulb(IP Address, MAC Address)
+	lifx1 = createBulb('10.168.1.17', 'D0:73:D5:02:64:11')
+	bulbs = [lifx1]
+	
+	#parse bulb selection
+	if sys.argv[1] == 'lifx1':
+		 bulbs = [lifx1]
 	
 	
-	#setBulbPower(bulbs,sys.argv[1] == '1')
-	#RGB Colors
-	#setBulbColor(bulbs, 255, 255, 255, 8500, 0) 
-	input = sys.argv[1].split(',')
+	#parse command selection
+	if sys.argv[2] == 'off':
+		lazylights.set_power(bulbs, 0)
+	elif sys.argv[2] == 'on':
+		lazylights.set_power(bulbs, 1)
+	else:
+		input = sys.argv[2].split(',')
+		hue=int(float(input[0]))
+		saturation=int(float(input[1]))
+		brightness=int(float(input[2]))
+		kelvin = int(float(input[3]))
+		fade = int(float(input[4]))
+		
+		if not powerState(bulbs):
+			lazylights.set_power(bulbs, 1)
 
-	hue=int(input[0])
-	saturation=int(input[1])
-	brightness=int(input[2])
-	lazylights.set_state(bulbs, hue, saturation, brightness, kelvin=0, fade=0, raw=False)
-
-	
+		lazylights.set_state(bulbs, hue, saturation, brightness, kelvin, fade, raw=False)
+#lazylights.get_state(bulbs)
